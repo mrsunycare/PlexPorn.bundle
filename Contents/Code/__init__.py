@@ -73,15 +73,15 @@ class PlexPorn(Agent.Movies):
       return
 
     # update scene
-    if scene['title']:
+    if 'title' in scene:
       metadata.title = scene['title']
-    if scene['site']:
+    if 'site' in scene:
       metadata.collections = [ scene['site'] ]
-    if scene['description']:
+    if 'description' in scene:
       metadata.summary = scene['description']
-    if scene['paysite']:
+    if 'paysite' in scene:
       metadata.studio = scene['paysite']
-    if scene['date']:
+    if 'date' in scene:
       date = datetime.strptime( scene['date'], '%Y-%m-%d' )
       metadata.year = int( scene['date'].split("-")[0] ) 
       metadata.originally_available_at = date.date()
