@@ -1,7 +1,7 @@
 import urllib, urllib2, os, re, json
 from datetime import datetime
 
-PlexPorn_API = "https://theporndb.herokuapp.com/api/scenes/"
+PlexPorn_API = "http://theporndb.herokuapp.com/api/scenes/"
 def PlexPorn_query(query):
   req = urllib2.Request(PlexPorn_API,
         json.dumps({'query':query}), {'Content-Type': 'application/json'}
