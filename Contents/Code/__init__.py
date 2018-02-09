@@ -1,12 +1,16 @@
-import urllib, urllib2, os, re, json
+import urllib, urllib2, os, re, json, ssl
 from datetime import datetime
 
-PlexPorn_API = "http://theporndb.herokuapp.com/api/scenes/"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+PlexPorn_API = "https://theporndb.herokuapp.com/api/scenes/"
+
 def PlexPorn_query(query):
   req = urllib2.Request(PlexPorn_API,
         json.dumps({'query':query}), {'Content-Type': 'application/json'}
       )
-  response = urllib2.urlopen(req)
+  response = urllib2.urlopen(req,context=ctx)
   return json.loads( response.read() )
 
 class PlexPorn(Agent.Movies):
@@ -59,6 +63,8 @@ class PlexPorn(Agent.Movies):
     
   def update( self, metadata, media, lang, force):
     scene = None
+    filename = media.items[0].parts[0].file
+    poster_path  = re.sub( r"\.\w+$", ".jpg", filename)
 
     # check if we have a unique_id
     if "|" not in metadata.id:
@@ -76,7 +82,10 @@ class PlexPorn(Agent.Movies):
     if 'title' in scene:
       metadata.title = scene['title']
     if 'site' in scene:
-      metadata.collections = [ scene['site'] ]
+      if 'paysite' in scene:
+        metadata.collections = [ scene['site'], scene['paysite'] ]
+      else:
+        metadata.collections = [ scene['site'] ]
     if 'description' in scene:
       metadata.summary = scene['description']
     if 'paysite' in scene:
@@ -85,7 +94,16 @@ class PlexPorn(Agent.Movies):
       date = datetime.strptime( scene['date'], '%Y-%m-%d' )
       metadata.year = int( scene['date'].split("-")[0] ) 
       metadata.originally_available_at = date.date()
-    
+    if 'image' in scene:
+      if scene['image'] not in metadata.posters:
+        img = HTTP.Request( scene['image'] )
+        metadata.posters[ scene['image'] ] = Proxy.Preview( img )
+
+    if poster_path not in metadata.posters:
+      if os.path.isfile( poster_path ):
+        data = Core.storage.load( poster_path )
+        metadata.posters[ poster_path ] = Proxy.Media(data)
+ 
     # grab actors
     if 'actors' in scene:
       if len( scene['actors'] ) > 0 :
